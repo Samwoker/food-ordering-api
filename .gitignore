@@ -1,0 +1,22 @@
+# Rust build artifacts
+target/
+
+# Environment variables (sensitive data)
+.env
+.env.*
+!.env.example
+
+# Common IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Cargo lock (optional, but often ignored in libraries; APIs usually keep it. 
+# However, if the user wants to stay clean, they can ignore it. 
+# I will keep it for now as it's best practice for applications.)
+# Cargo.lock
