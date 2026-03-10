@@ -50,3 +50,4 @@ validator = { version = "0.16", features = ["derive"] }
 
 # Random number generation (for tokens)
 rand = "0.8"
+futures-util = "0.3"

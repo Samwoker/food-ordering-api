@@ -7,10 +7,20 @@ use validator::Validate;
 #[derive(Debug,Deserialize,Serialize,Clone,sqlx::Type,PartialEq)]
 #[sqlx(type_name="user_role")]
 
-pub enum UserRole{
+pub enum UserRole {
     Customer,
     RestaurantOwner,
-    Admin
+    Admin,
+}
+
+impl std::fmt::Display for UserRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UserRole::Customer => write!(f, "Customer"),
+            UserRole::RestaurantOwner => write!(f, "RestaurantOwner"),
+            UserRole::Admin => write!(f, "Admin"),
+        }
+    }
 }
 #[derive(Debug,Serialize,sqlx::FromRow)]
 pub struct User{
