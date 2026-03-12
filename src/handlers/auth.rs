@@ -64,7 +64,6 @@ pub async fn register(
     ).fetch_one(pool.get_ref())
     .await?;
 
-    //TODO:send verification email
 
     let email_token = generate_email_token(user_id,&redis).await?;
     let _ = email_service::send_verification_email(
@@ -192,7 +191,7 @@ pub async fn forgot_password(
 
     let user = sqlx::query!(
         "SELECT id, full_name FROM users WHERE email=$1 AND is_blocked=false ",
-        body/app-unavailable-in-region.email.to_lowercase()
+        body.email.to_lowercase()
     ).fetch_optional(pool.get_ref())
     .await?;
 
