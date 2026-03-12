@@ -264,3 +264,20 @@ pub async fn verify_email(
         "message":"Email verified successfully. You can now login."
     )))
 }
+
+pub fn claims_from_request(
+    req:&HttpRequest
+)->Result<AccessClaims,AppError>{
+    req
+    .extensions()
+    .get::<AccessClaims>()
+    .cloned()
+    .ok_or_else(|| AppError::Unauthorized("Not authenticated".to_string()))
+}
+
+pub fn user_id_from_request(req:&HttpRequest)->Result<Uuid,AppError>{
+    claims_from_request(req)?
+    .sub
+    .parse()
+    .map_err(|_| AppError::InternalError)   
+}
