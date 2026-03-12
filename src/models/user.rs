@@ -1,4 +1,3 @@
-
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
@@ -6,7 +5,7 @@ use uuid::Uuid;
 use validator::Validate;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, sqlx::Type)]
-#[sqlx(type_name = "TEXT")]
+#[sqlx(type_name = "user_role")]
 pub enum UserRole {
     Customer,
     RestaurantOwner,
@@ -17,10 +16,10 @@ pub enum UserRole {
 impl std::fmt::Display for UserRole {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
-            UserRole::Customer        => "Customer",
+            UserRole::Customer => "Customer",
             UserRole::RestaurantOwner => "RestaurantOwner",
-            UserRole::Driver          => "Driver",
-            UserRole::Admin           => "Admin",
+            UserRole::Driver => "Driver",
+            UserRole::Admin => "Admin",
         };
         write!(f, "{}", s)
     }
@@ -28,18 +27,18 @@ impl std::fmt::Display for UserRole {
 
 #[derive(Debug, Serialize, FromRow)]
 pub struct User {
-    pub id:           Uuid,
-    pub email:        String,
+    pub id: Uuid,
+    pub email: String,
 
     #[serde(skip_serializing)]
-    pub password_hash: String,
+    pub password: String,
 
-    pub full_name:    String,
-    pub role:         UserRole,
-    pub is_blocked:   bool,
-    pub is_verified:  bool,
-    pub created_at:   DateTime<Utc>,
-    pub updated_at:   DateTime<Utc>,
+    pub full_name: String,
+    pub role: UserRole,
+    pub is_blocked: bool,
+    pub is_verified: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Deserialize, Validate)]
@@ -55,7 +54,7 @@ pub struct RegisterRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct LoginRequest {
-    pub email:    String,
+    pub email: String,
     pub password: String,
 }
 
@@ -83,30 +82,30 @@ pub struct ResetPasswordRequest {
 
 #[derive(Debug, Serialize)]
 pub struct UserResponse {
-    pub id:          Uuid,
-    pub email:       String,
-    pub full_name:   String,
-    pub role:        UserRole,
+    pub id: Uuid,
+    pub email: String,
+    pub full_name: String,
+    pub role: UserRole,
     pub is_verified: bool,
-    pub created_at:  DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
 }
 
 impl From<User> for UserResponse {
     fn from(u: User) -> Self {
         Self {
-            id:          u.id,
-            email:       u.email,
-            full_name:   u.full_name,
-            role:        u.role,
+            id: u.id,
+            email: u.email,
+            full_name: u.full_name,
+            role: u.role,
             is_verified: u.is_verified,
-            created_at:  u.created_at,
+            created_at: u.created_at,
         }
     }
 }
 
 #[derive(Debug, Serialize)]
 pub struct AuthResponse {
-    pub access_token:  String,
+    pub access_token: String,
     pub refresh_token: String,
-    pub user:          UserResponse,
+    pub user: UserResponse,
 }

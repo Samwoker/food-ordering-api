@@ -108,7 +108,23 @@ pub async fn get_order(
 
     let order = sqlx::query_as!(
         Order,
-        "SELECT * FROM orders WHERE id = $1 AND customer_id = $2",
+        r#"
+            SELECT 
+                id, 
+                customer_id, 
+                restaurant_id, 
+                driver_id, 
+                status AS "status: OrderStatus", 
+                total_price, 
+                delivery_address, 
+                delivery_lat, 
+                delivery_lng, 
+                cancellation_reason, 
+                created_at, 
+                updated_at 
+            FROM orders 
+            WHERE id = $1 AND customer_id = $2
+        "#,
         order_id,
         customer_id
     )

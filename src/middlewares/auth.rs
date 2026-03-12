@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::services::auth_service::decode_jwt;
+use crate::services::auth_service::decode_access_token;
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     web, Error, HttpMessage,
@@ -57,10 +57,12 @@ where
                 .get("Authorization")
                 .and_then(|v| v.to_str().ok())
                 .and_then(|v| v.strip_prefix("Bearer "))
-                .ok_or_else(|| actix_web::error::ErrorUnauthorized("Missing Authorization header"))?;
+                .ok_or_else(|| {
+                    actix_web::error::ErrorUnauthorized("Missing Authorization header")
+                })?;
 
             // Validate token and inject Claims into request extensions
-            let claims = decode_jwt(token, config)
+            let claims = decode_access_token(token, config)
                 .map_err(|e| actix_web::error::ErrorUnauthorized(e.to_string()))?;
 
             req.extensions_mut().insert(claims);
