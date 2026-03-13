@@ -1,19 +1,17 @@
-
-
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CartItem {
-    pub menu_item_id:  Uuid,
-    pub name:          String,
-    pub unit_price:    f64,
-    pub quantity:      i32,
+    pub menu_item_id: Uuid,
+    pub name: String,
+    pub unit_price: f64,
+    pub quantity: i32,
     pub restaurant_id: Uuid,
-    pub image_url:     Option<String>,
+    pub image_url: Option<String>,
 }
-.
+
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Cart {
     pub items: Vec<CartItem>,
@@ -57,19 +55,19 @@ pub struct UpdateCartItemRequest {
 
 #[derive(Debug, Serialize)]
 pub struct CartResponse {
-    pub items:         Vec<CartItem>,
+    pub items: Vec<CartItem>,
     pub restaurant_id: Option<Uuid>,
-    pub subtotal:      f64,
-    pub item_count:    i32,
+    pub subtotal: f64,
+    pub item_count: i32,
 }
 
 impl From<Cart> for CartResponse {
     fn from(c: Cart) -> Self {
-        let subtotal   = c.subtotal();
+        let subtotal = c.subtotal();
         let item_count = c.item_count();
         Self {
             restaurant_id: c.restaurant_id,
-            items:         c.items,
+            items: c.items,
             subtotal,
             item_count,
         }

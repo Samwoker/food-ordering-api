@@ -9,6 +9,7 @@ mod error;
 mod handlers;
 mod middlewares;
 mod models;
+mod paginations;
 mod routes;
 mod services;
 
