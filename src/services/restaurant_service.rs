@@ -1,4 +1,5 @@
 use crate::error::AppError;
+use crate::handlers::restaurant;
 use crate::models::restaurant::{
     CreateRestaurantRequest, Restaurant, RestaurantFilter, RestaurantSummary,
     UpdateRestaurantRequest,
@@ -114,4 +115,38 @@ pub async fn get_restaurant_by_id(pool: &PgPool, id: Uuid) -> Result<Restaurant,
     .fetch_optional(pool)
     .await?
     .ok_or_else(|| AppError::NotFound("Restaurant not found".to_string()))
+}
+
+pub async fn create_restaurant(
+    pool: &PgPool,
+    owner_id: Uuid,
+    body: CreateRestaurantRequest,
+) -> Result<Restaurant, AppError> {
+    let id = Uuid::new_v4();
+    let restaurant = sqlx::query_as::<sqlx::Postgres, Restaurant>(
+        r#"
+        INSERT INTO restaurants (id, owner_id, name, description, address, category, phone, image_url, lat, lng)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING *"#,
+    )
+    .bind(id)
+    .bind(owner_id)
+    .bind(body.name.trim())
+    .bind(body.description)
+    .bind(body.address.trim())
+    .bind(body.category.trim())
+    .bind(body.phone)
+    .bind(body.image_url)
+    .bind(body.lat)
+    .bind(body.lng)
+    .fetch_one(pool)
+    .await?;
+    tracing::info!(
+        restaurant_id = %id,
+        owner_id      = %owner_id,
+        name          = %restaurant.name,
+        "Restaurant created — pending admin approval"
+    );
+
+    Ok(restaurant)
 }
