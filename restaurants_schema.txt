@@ -1,0 +1,29 @@
+                            Table "public.restaurants"
+   Column    |           Type           | Collation | Nullable |      Default      
+-------------+--------------------------+-----------+----------+-------------------
+ id          | uuid                     |           | not null | 
+ owner_id    | uuid                     |           | not null | 
+ name        | character varying(150)   |           | not null | 
+ description | text                     |           |          | 
+ address     | character varying(300)   |           | not null | 
+ category    | character varying(100)   |           | not null | 
+ phone       | character varying(20)    |           |          | 
+ image_url   | text                     |           |          | 
+ avg_rating  | double precision         |           | not null | 0.0
+ is_active   | boolean                  |           | not null | true
+ is_approved | boolean                  |           | not null | false
+ lat         | double precision         |           |          | 
+ lng         | double precision         |           |          | 
+ created_at  | timestamp with time zone |           | not null | CURRENT_TIMESTAMP
+ updated_at  | timestamp with time zone |           | not null | CURRENT_TIMESTAMP
+Indexes:
+    "restaurants_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "restaurants_owner_id_fkey" FOREIGN KEY (owner_id) REFERENCES users(id)
+Referenced by:
+    TABLE "favorites" CONSTRAINT "favorites_restaurant_id_fkey" FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE
+    TABLE "menu_categories" CONSTRAINT "menu_categories_restaurant_id_fkey" FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE
+    TABLE "menu_items" CONSTRAINT "menu_items_restaurant_id_fkey" FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE
+    TABLE "orders" CONSTRAINT "orders_restaurant_id_fkey" FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)
+    TABLE "reviews" CONSTRAINT "reviews_restaurant_id_fkey" FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE
+

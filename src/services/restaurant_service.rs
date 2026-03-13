@@ -21,7 +21,7 @@ pub async fn list_restaurants(
     let mut qb = QueryBuilder::new(
         r#"
             SELECT
-                r.id
+                r.id,
                 r.name,
                 r.description,
                 r.address,
@@ -35,7 +35,7 @@ pub async fn list_restaurants(
                 r.is_approved,
                 r.owner_id,
                 r.created_at,
-                r.updated_at,
+                r.updated_at
             FROM restaurants r
             WHERE  r.is_approved = true
             AND r.is_active = true
@@ -78,15 +78,12 @@ pub async fn list_restaurants(
         Some("newest") => qb.push("ORDER BY r.created_at DESC"),
         _ => qb.push("ORDER BY r.created_at DESC"),
     };
-    let count_sql = format!(
-        "SELECT COUNT(*) FROM ({}) AS sub",
-        qb.sql().replace("SELECT\n            r.id,\n            r.name,\n            r.description,\n            r.address,\n            r.category,\n            r.phone,\n            r.image_url,\n            r.avg_rating,\n            r.lat,\n            r.lng,\n            r.is_active,\n            r.is_approved,\n            r.owner_id,\n            r.created_at,\n            r.updated_at", "SELECT 1")
-    );
+    let _ = filter; // keep it for now if needed else remove
     qb.push("LIMIT").push_bind(paging.limit);
     qb.push("OFFSET").push_bind(paging.offset());
 
     let rows = qb.build_query_as::<Restaurant>().fetch_all(pool).await?;
-    let total: i64 = sqlx::query_scalar!(
+    let total: i64 = sqlx::query_scalar(
         r#"
         SELECT COUNT(*)
         FROM restaurants
@@ -97,15 +94,24 @@ pub async fn list_restaurants(
           AND ($2::TEXT IS NULL OR category = $2)
           AND ($3::FLOAT8 IS NULL OR avg_rating >= $3)
         "#,
-        filter.search,
-        filter.category,
-        filter.rating,
     )
+    .bind(&filter.search)
+    .bind(&filter.category)
+    .bind(&filter.rating)
     .fetch_one(pool)
-    .await?
-    .unwrap_or(0);
+    .await?;
     Ok(RestaurantListResult {
         restaurants: rows.into_iter().map(RestaurantSummary::from).collect(),
         total,
     })
+}
+
+pub async fn get_restaurant_by_id(pool: &PgPool, id: Uuid) -> Result<Restaurant, AppError> {
+    sqlx::query_as::<sqlx::Postgres, Restaurant>(
+        "SELECT * FROM restaurants WHERE id = $1  AND is_approved = true AND is_active = true",
+    )
+    .bind(id)
+    .fetch_optional(pool)
+    .await?
+    .ok_or_else(|| AppError::NotFound("Restaurant not found".to_string()))
 }

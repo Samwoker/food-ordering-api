@@ -5,7 +5,11 @@ use crate::{
 use actix_web::web;
 
 pub fn configure_restaurant_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::scope("/api/v1").service(
-        web::scope("/restaurants").route("/", web::get().to(restaurant::list_restaurants)),
-    ));
+    cfg.service(
+        web::scope("/api/v1").service(
+            web::scope("/restaurants")
+                .route("/", web::get().to(restaurant::list_restaurants))
+                .route("/{id}", web::get().to(restaurant::get_restaurant)),
+        ),
+    );
 }

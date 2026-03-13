@@ -22,3 +22,12 @@ pub async fn list_restaurants(
         &paging,
     )))
 }
+
+pub async fn get_restaurant(
+    pool: web::Data<sqlx::PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, AppError> {
+    let restaurant =
+        restaurant_service::get_restaurant_by_id(pool.get_ref(), path.into_inner()).await?;
+    Ok(HttpResponse::Ok().json(restaurant))
+}
