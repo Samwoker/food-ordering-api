@@ -24,7 +24,8 @@ pub fn configure_restaurant_routes(cfg: &mut web::ServiceConfig) {
                         .route(
                             "/delete/{id}",
                             web::delete().to(restaurant::delete_restaurant),
-                        ),
+                        )
+                        .route("/categories", web::post().to(menu::create_category)),
                 ),
         ),
     );
