@@ -35,3 +35,22 @@ pub async fn get_menu_item(
     let menu_item = menu_service::get_menu_item(pool.get_ref(), path.into_inner()).await?;
     Ok(HttpResponse::Ok().json(menu_item))
 }
+
+pub async fn create_category(
+    req: HttpRequest,
+    pool: web::Data<sqlx::PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<CreateCategoryRequest>,
+) -> Result<HttpResponse, AppError> {
+    body.validate()
+        .map_err(|e| AppError::BadRequest(e.to_string()))?;
+    let owner_id = user_id_from_request(&req)?;
+    let restaurant_id = path.into_inner();
+    let category =
+        menu_service::create_category(pool.get_ref(), restaurant_id, owner_id, body.into_inner())
+            .await?;
+    Ok(HttpResponse::Created().json(serde_json::json!({
+        "message":"Category created successfully",
+        "category":category
+    })))
+}
