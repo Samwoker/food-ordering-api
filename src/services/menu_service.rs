@@ -123,3 +123,28 @@ async fn verify_restaurant_owner(
     }
     Ok(())
 }
+
+pub async fn create_menu_item(
+    pool: &PgPool,
+    owner_id: Uuid,
+    body: CreateMenuItemRequest,
+) -> Result<MenuItem, AppError> {
+    let id = Uuid::new_v4();
+    let menu_item = sqlx::query_as::<sqlx::Postgres, MenuItem>(
+        r#"
+            INSERT INTO menu_items (id,restaurant_id,category_id,name,description,price,image_url)
+            VALUES ($1,$2,$3,$4,$5,$6,$7)
+            RETURNING *
+        "#,
+    )
+    .bind(id)
+    .bind(body.restaurant_id)
+    .bind(body.category_id)
+    .bind(body.name.trim())
+    .bind(body.description)
+    .bind(body.price)
+    .bind(body.image_url)
+    .fetch_one(pool)
+    .await?;
+    Ok(menu_item)
+}

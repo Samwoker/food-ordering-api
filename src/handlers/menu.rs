@@ -1,10 +1,14 @@
+use crate::cloudinary::upload_image;
 use crate::{
+    config::Config,
     error::AppError,
     handlers::auth::user_id_from_request,
     models::menu_item::{CreateCategoryRequest, CreateMenuItemRequest, UpdateMenuItemRequest},
     services::menu_service,
 };
+use futures_util::StreamExt;
 
+use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse};
 
 use uuid::Uuid;
@@ -65,5 +69,67 @@ pub async fn delete_category(
     menu_service::delete_category(pool.get_ref(), category_id, owner_id).await?;
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "message":"Category deleted successfully",
+    })))
+}
+
+pub async fn create_menu_item(
+    req: HttpRequest,
+    pool: web::Data<sqlx::PgPool>,
+    path: web::Path<Uuid>,
+    mut payload: Multipart,
+    config: web::Data<Config>,
+) -> Result<HttpResponse, AppError> {
+    let owner_id = user_id_from_request(&req)?;
+    let mut image_bytes: Vec<u8> = Vec::new();
+    let mut fields: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    while let Some(item) = payload.next().await {
+        let mut field =
+            item.map_err(|e: actix_multipart::MultipartError| AppError::BadRequest(e.to_string()))?;
+        let field_name = field.name().to_string();
+        if field_name == "image" {
+            while let Some(chunk) = field.next().await {
+                image_bytes.extend_from_slice(&chunk.map_err(
+                    |e: actix_multipart::MultipartError| AppError::BadRequest(e.to_string()),
+                )?)
+            }
+        } else {
+            let mut data = Vec::new();
+            while let Some(chunk) = field.next().await {
+                data.extend_from_slice(&chunk.map_err(|e: actix_multipart::MultipartError| {
+                    AppError::BadRequest(e.to_string())
+                })?);
+            }
+            fields.insert(
+                field_name,
+                String::from_utf8(data).map_err(|e| AppError::BadRequest(e.to_string()))?,
+            );
+        }
+    }
+    let mut create_req = CreateMenuItemRequest {
+        name: fields.get("name").cloned().unwrap_or_default(),
+        category_id: fields
+            .get("category_id")
+            .and_then(|v| Uuid::parse_str(v).ok()),
+        description: fields.get("description").cloned(),
+        price: fields
+            .get("price")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0.0),
+        restaurant_id: path.into_inner(),
+        image_url: None,
+    };
+    create_req
+        .validate()
+        .map_err(|e| AppError::BadRequest(e.to_string()))?;
+    if !image_bytes.is_empty() {
+        let image_url = upload_image(&config.cloudinary_url, image_bytes)
+            .await
+            .map_err(|e| AppError::InternalError(e.to_string()))?;
+        create_req.image_url = Some(image_url);
+    }
+    let menu_item = menu_service::create_menu_item(pool.get_ref(), owner_id, create_req).await?;
+    Ok(HttpResponse::Created().json(serde_json::json!({
+        "message":"Menu item created successfully",
+        "menu_item":menu_item
     })))
 }
