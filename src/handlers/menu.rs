@@ -149,3 +149,14 @@ pub async fn update_menu_item(
         menu_service::update_menu_item(pool.get_ref(), owner_id, menu_item_id, update_req).await?;
     Ok(HttpResponse::Ok().json(menu_item))
 }
+
+pub async fn delete_menu_item(
+    req: HttpRequest,
+    pool: web::Data<sqlx::PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, AppError> {
+    let owner_id = user_id_from_request(&req)?;
+    let item_id = path.into_inner();
+    let result = menu_service::delete_menu_item(pool.get_ref(), owner_id, item_id).await?;
+    Ok(HttpResponse::Ok().json(result))
+}

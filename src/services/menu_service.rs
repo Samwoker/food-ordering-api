@@ -215,3 +215,45 @@ pub async fn update_menu_item(
     .await?;
     Ok(menu_item)
 }
+pub async fn delete_menu_item(
+    pool: &PgPool,
+    owner_id: Uuid,
+    item_id: Uuid,
+) -> Result<serde_json::Value, AppError> {
+    let item = get_menu_item(pool, item_id).await?;
+    verify_restaurant_owner(pool, item.restaurant_id, owner_id).await?;
+    let in_active_order: bool = sqlx::query_scalar!(
+        r#"
+            SELECT EXISTS(
+                SELECT 1 FROM order_items oi
+                JOIN orders o ON o.id = oi.order_id
+                WHERE oi.menu_item_id = $1
+                AND o.status NOT IN('Delivered','Cancelled')
+            )
+        "#,
+        item_id
+    )
+    .fetch_one(pool)
+    .await?
+    .unwrap_or(false);
+
+    if in_active_order {
+        sqlx::query!(
+            "UPDATE menu_items SET is_available = false AND updated_at = NOW() WHERE id = $1",
+            item_id
+        )
+        .execute(pool)
+        .await?;
+        return Ok(serde_json::json!({
+            "deleted": false,
+            "message": "Item is in an active order — marked unavailable instead of deleted."
+        }));
+    }
+    sqlx::query!("DELETE FROM menu_items WHERE id=$1", item_id)
+        .execute(pool)
+        .await?;
+    Ok(serde_json::json!({
+        "deleted": true,
+        "message": "Item deleted successfully."
+    }))
+}
