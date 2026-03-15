@@ -212,3 +212,16 @@ async fn verify_ownership(
     }
     Ok(())
 }
+
+pub async fn delete_restaurant(
+    pool: &PgPool,
+    restaurant_id: Uuid,
+    owner_id: Uuid,
+) -> Result<(), AppError> {
+    verify_ownership(pool, restaurant_id, owner_id).await?;
+    sqlx::query("UPDATE restaurants SET is_active = false, updated_at = NOW() WHERE id = $1")
+        .bind(restaurant_id)
+        .execute(pool)
+        .await?;
+    Ok(())
+}

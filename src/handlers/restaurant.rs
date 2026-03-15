@@ -116,3 +116,16 @@ pub async fn update_restaurant(
     .await?;
     Ok(HttpResponse::Ok().json(updated))
 }
+
+pub async fn delete_restaurant(
+    req: HttpRequest,
+    pool: web::Data<sqlx::PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, AppError> {
+    let owner_id = user_id_from_request(&req)?;
+    let restaurant_id = path.into_inner();
+    restaurant_service::delete_restaurant(pool.get_ref(), restaurant_id, owner_id).await?;
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message": "Restaurant deleted successfully"
+    })))
+}
