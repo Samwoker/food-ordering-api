@@ -9,7 +9,7 @@ use crate::{
 use futures_util::StreamExt;
 
 use actix_multipart::Multipart;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, App, HttpRequest, HttpResponse};
 
 use uuid::Uuid;
 use validator::Validate;
@@ -132,4 +132,20 @@ pub async fn create_menu_item(
         "message":"Menu item created successfully",
         "menu_item":menu_item
     })))
+}
+
+pub async fn update_menu_item(
+    req: HttpRequest,
+    pool: web::Data<sqlx::PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<UpdateMenuItemRequest>,
+) -> Result<HttpResponse, AppError> {
+    body.validate()
+        .map_err(|e| AppError::BadRequest(e.to_string()))?;
+    let owner_id = user_id_from_request(&req)?;
+    let menu_item_id = path.into_inner();
+    let update_req = body.into_inner();
+    let menu_item =
+        menu_service::update_menu_item(pool.get_ref(), owner_id, menu_item_id, update_req).await?;
+    Ok(HttpResponse::Ok().json(menu_item))
 }

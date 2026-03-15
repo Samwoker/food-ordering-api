@@ -30,7 +30,11 @@ pub fn configure_restaurant_routes(cfg: &mut web::ServiceConfig) {
                             "/categories/{category_id}",
                             web::delete().to(menu::delete_category),
                         )
-                        .route("/menu", web::post().to(menu::create_menu_item)),
+                        .route("/menu", web::post().to(menu::create_menu_item))
+                        .route(
+                            "/update-menu/{menu_id}",
+                            web::put().to(menu::update_menu_item),
+                        ),
                 ),
         ),
     );

@@ -129,7 +129,24 @@ pub async fn create_menu_item(
     owner_id: Uuid,
     body: CreateMenuItemRequest,
 ) -> Result<MenuItem, AppError> {
+    verify_restaurant_owner(pool, body.restaurant_id, owner_id).await?;
     let id = Uuid::new_v4();
+    if let Some(category_id) = body.category_id {
+        let category_belongs = sqlx::query_scalar!(
+            "SELECT EXISTS(SELECT 1 FROM menu_categories WHERE id = $1 AND restaurant_id = $2)",
+            category_id,
+            body.restaurant_id
+        )
+        .fetch_one(pool)
+        .await?
+        .unwrap_or(false);
+
+        if !category_belongs {
+            return Err(AppError::BadRequest(
+                "Category does not belong to this restaurant".to_string(),
+            ));
+        }
+    }
     let menu_item = sqlx::query_as::<sqlx::Postgres, MenuItem>(
         r#"
             INSERT INTO menu_items (id,restaurant_id,category_id,name,description,price,image_url)
@@ -144,6 +161,56 @@ pub async fn create_menu_item(
     .bind(body.description)
     .bind(body.price)
     .bind(body.image_url)
+    .fetch_one(pool)
+    .await?;
+    Ok(menu_item)
+}
+
+pub async fn update_menu_item(
+    pool: &PgPool,
+    owner_id: Uuid,
+    item_id: Uuid,
+    body: UpdateMenuItemRequest,
+) -> Result<MenuItem, AppError> {
+    let item = get_menu_item(pool, item_id).await?;
+    verify_restaurant_owner(pool, item.restaurant_id, owner_id).await?;
+    if let Some(Some(category_id)) = &body.category_id.map(Some) {
+        let category_belongs = sqlx::query_scalar!(
+            "SELECT EXISTS(SELECT 1 FROM menu_categories WHERE id = $1 ANd restaurant_id = $2)",
+            category_id,
+            item.restaurant_id
+        )
+        .fetch_one(pool)
+        .await?
+        .unwrap_or(false);
+
+        if !category_belongs {
+            return Err(AppError::BadRequest(
+                "Category does not belong to this restaurant".to_string(),
+            ));
+        }
+    }
+    let menu_item = sqlx::query_as::<sqlx::Postgres, MenuItem>(
+        r#"
+        UPDATE menu_items SET
+            category_id  = COALESCE($1, category_id),
+            name         = COALESCE($2, name),
+            description  = COALESCE($3, description),
+            price        = COALESCE($4, price),
+            image_url    = COALESCE($5, image_url),
+            is_available = COALESCE($6, is_available),
+            updated_at   = NOW()
+        WHERE id = $7
+        RETURNING *
+        "#,
+    )
+    .bind(body.category_id)
+    .bind(body.name)
+    .bind(body.description)
+    .bind(body.price)
+    .bind(body.image_url)
+    .bind(body.is_available)
+    .bind(item_id)
     .fetch_one(pool)
     .await?;
     Ok(menu_item)
