@@ -11,6 +11,8 @@ pub enum AppError {
     Unauthorized(String),
     #[error("Bad Request: {0}")]
     BadRequest(String),
+    #[error("Forbidden: {0}")]
+    Forbidden(String),
     #[error("Conflict: {0}")]
     Conflict(String),
     #[error("Internal server error")]
@@ -37,6 +39,7 @@ impl ResponseError for AppError {
                 (actix_web::http::StatusCode::UNAUTHORIZED, "UNAUTHORIZED")
             }
             AppError::BadRequest(_) => (actix_web::http::StatusCode::BAD_REQUEST, "BAD_REQUEST"),
+            AppError::Forbidden(_) => (actix_web::http::StatusCode::FORBIDDEN, "FORBIDDEN"),
             AppError::Conflict(_) => (actix_web::http::StatusCode::CONFLICT, "CONFLICT"),
             AppError::InternalServerError
             | AppError::InternalError(_)

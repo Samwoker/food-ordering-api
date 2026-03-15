@@ -14,7 +14,8 @@ pub fn configure_restaurant_routes(cfg: &mut web::ServiceConfig) {
                     web::scope("")
                         .wrap(AuthMiddleware)
                         .wrap(RoleGuard::any(vec!["RestaurantOwner", "Admin"]))
-                        .route("/", web::post().to(restaurant::create_restaurant)),
+                        .route("/", web::post().to(restaurant::create_restaurant))
+                        .route("/update/{id}", web::put().to(restaurant::update_restaurant)),
                 ),
         ),
     );

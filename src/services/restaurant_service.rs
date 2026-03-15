@@ -150,3 +150,65 @@ pub async fn create_restaurant(
 
     Ok(restaurant)
 }
+
+pub async fn update_restaurant(
+    pool: &PgPool,
+    restaurant_id: Uuid,
+    owner_id: Uuid,
+    body: UpdateRestaurantRequest,
+) -> Result<Restaurant, AppError> {
+    verify_ownership(pool, restaurant_id, owner_id).await?;
+
+    let restaurant = sqlx::query_as::<sqlx::Postgres, Restaurant>(
+        r#"
+        UPDATE restaurants
+        SET
+            name        = COALESCE($1, name),
+            description = COALESCE($2, description),
+            address     = COALESCE($3, address),
+            category    = COALESCE($4, category),
+            phone       = COALESCE($5, phone),
+            image_url   = COALESCE($6, image_url),
+            lat         = COALESCE($7, lat),
+            lng         = COALESCE($8, lng),
+            is_active   = COALESCE($9, is_active),
+            updated_at  = NOW()
+        WHERE id = $10
+        RETURNING *
+        "#,
+    )
+    .bind(body.name.as_ref().map(|s| s.trim()))
+    .bind(body.description)
+    .bind(body.address.as_ref().map(|s| s.trim()))
+    .bind(body.category.as_ref().map(|s| s.trim()))
+    .bind(body.phone)
+    .bind(body.image_url)
+    .bind(body.lat)
+    .bind(body.lng)
+    .bind(body.is_active)
+    .bind(restaurant_id)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(restaurant)
+}
+
+async fn verify_ownership(
+    pool: &PgPool,
+    restaurant_id: Uuid,
+    owner_id: Uuid,
+) -> Result<(), AppError> {
+    let row =
+        sqlx::query_as::<sqlx::Postgres, Restaurant>("SELECT * FROM restaurants WHERE id = $1")
+            .bind(restaurant_id)
+            .fetch_optional(pool)
+            .await?
+            .ok_or_else(|| AppError::NotFound(format!("Restaurant {} not found", restaurant_id)))?;
+
+    if row.owner_id != owner_id {
+        return Err(AppError::Forbidden(
+            "You do not own this restaurant".to_string(),
+        ));
+    }
+    Ok(())
+}

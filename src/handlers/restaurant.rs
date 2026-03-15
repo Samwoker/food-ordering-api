@@ -9,7 +9,7 @@ use crate::{
 
 use crate::cloudinary::upload_image;
 use actix_multipart::Multipart;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, App, HttpRequest, HttpResponse};
 use futures_util::StreamExt;
 use uuid::Uuid;
 use validator::Validate;
@@ -95,4 +95,24 @@ pub async fn create_restaurant(
         "restaurant": restaurant,
         "message": "Restaurant created successfully"
     })))
+}
+
+pub async fn update_restaurant(
+    req: HttpRequest,
+    pool: web::Data<sqlx::PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<UpdateRestaurantRequest>,
+) -> Result<HttpResponse, AppError> {
+    body.validate()
+        .map_err(|e| AppError::BadRequest(e.to_string()))?;
+    let owner_id = user_id_from_request(&req)?;
+    let restaurant_id = path.into_inner();
+    let updated = restaurant_service::update_restaurant(
+        pool.get_ref(),
+        restaurant_id,
+        owner_id,
+        body.into_inner(),
+    )
+    .await?;
+    Ok(HttpResponse::Ok().json(updated))
 }
