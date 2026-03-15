@@ -257,3 +257,18 @@ pub async fn delete_menu_item(
         "message": "Item deleted successfully."
     }))
 }
+
+pub async fn list_menu_for_owner(
+    pool: &PgPool,
+    owner_id: Uuid,
+    restaurant_id: Uuid,
+) -> Result<Vec<MenuItem>, AppError> {
+    verify_restaurant_owner(pool, restaurant_id, owner_id).await?;
+    let menu_items = sqlx::query_as::<sqlx::Postgres, MenuItem>(
+        "SELECT * FROM menu_items WHERE restaurant_id = $1 ORDER BY category_id NULL LAST , name ASC",
+    )
+    .bind(restaurant_id)
+    .fetch_all(pool)
+    .await?;
+    Ok(menu_items)
+}

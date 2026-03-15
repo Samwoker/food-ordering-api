@@ -38,7 +38,8 @@ pub fn configure_restaurant_routes(cfg: &mut web::ServiceConfig) {
                         .route(
                             "/delete-menu/{menu_id}",
                             web::delete().to(menu::delete_menu_item),
-                        ),
+                        )
+                        .route("/{id}/menu/owner", web::get().to(menu::list_menu_for_owner)),
                 ),
         ),
     );

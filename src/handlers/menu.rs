@@ -160,3 +160,14 @@ pub async fn delete_menu_item(
     let result = menu_service::delete_menu_item(pool.get_ref(), owner_id, item_id).await?;
     Ok(HttpResponse::Ok().json(result))
 }
+
+pub async fn list_menu_for_owner(
+    req: HttpRequest,
+    pool: web::Data<sqlx::PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, AppError> {
+    let owner_id = user_id_from_request(&req)?;
+    let restaurant_id = path.into_inner();
+    let menu = menu_service::list_menu_for_owner(pool.get_ref(), owner_id, restaurant_id).await?;
+    Ok(HttpResponse::Ok().json(menu))
+}
