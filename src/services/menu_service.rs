@@ -28,3 +28,13 @@ pub async fn list_menu(pool: &PgPool, restaurant_id: Uuid) -> Result<Vec<MenuIte
     .await?;
     Ok(menus)
 }
+
+pub async fn get_menu_item(pool: &PgPool, id: Uuid) -> Result<MenuItem, AppError> {
+    let menu_item =
+        sqlx::query_as::<sqlx::Postgres, MenuItem>("SELECT * FROM menu_items WHERE id = $1")
+            .bind(id)
+            .fetch_optional(pool)
+            .await?
+            .ok_or(AppError::NotFound("Menu item not found".to_string()))?;
+    Ok(menu_item)
+}

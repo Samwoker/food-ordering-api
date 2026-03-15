@@ -27,3 +27,11 @@ pub async fn list_menu(
     let menus = menu_service::list_menu(pool.get_ref(), restaurant_id).await?;
     Ok(HttpResponse::Ok().json(menus))
 }
+
+pub async fn get_menu_item(
+    pool: web::Data<sqlx::PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, AppError> {
+    let menu_item = menu_service::get_menu_item(pool.get_ref(), path.into_inner()).await?;
+    Ok(HttpResponse::Ok().json(menu_item))
+}
