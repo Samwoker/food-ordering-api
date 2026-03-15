@@ -1,0 +1,20 @@
+use crate::error::AppError;
+use crate::models::menu_item::{
+    CreateCategoryRequest, CreateMenuItemRequest, MenuCategory, MenuItem, UpdateMenuItemRequest,
+};
+
+use sqlx::postgres::PgPool;
+use uuid::Uuid;
+
+pub async fn list_categories(
+    pool: &PgPool,
+    restaurant_id: Uuid,
+) -> Result<Vec<MenuCategory>, AppError> {
+    let categories = sqlx::query_as::<sqlx::Postgres, MenuCategory>(
+        "SELECT * FROM menu_categories WHERE restaurant_id = $1 ORDER BY sort_order ASC, name ASC",
+    )
+    .bind(restaurant_id)
+    .fetch_all(pool)
+    .await?;
+    Ok(categories)
+}
