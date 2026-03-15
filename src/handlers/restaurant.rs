@@ -1,4 +1,5 @@
 use crate::{
+    config::Config,
     error::AppError,
     handlers::{auth::user_id_from_request, restaurant},
     models::restaurant::{CreateRestaurantRequest, RestaurantFilter, UpdateRestaurantRequest},
@@ -6,7 +7,10 @@ use crate::{
     services::restaurant_service,
 };
 
+use crate::cloudinary::upload_image;
+use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse};
+use futures_util::StreamExt;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -35,15 +39,60 @@ pub async fn get_restaurant(
 pub async fn create_restaurant(
     req: HttpRequest,
     pool: web::Data<sqlx::PgPool>,
-    body: web::Json<CreateRestaurantRequest>,
+    config: web::Data<Config>,
+    mut payload: Multipart,
 ) -> Result<HttpResponse, AppError> {
-    body.validate()
-        .map_err(|e| AppError::BadRequest(e.to_string()))?;
     let owner_id = user_id_from_request(&req)?;
+    let mut image_bytes: Vec<u8> = Vec::new();
+    let mut fields: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+
+    while let Some(item) = payload.next().await {
+        let mut field = item.map_err(|e| AppError::BadRequest(e.to_string()))?;
+        let field_name = field.name().to_string();
+
+        if field_name == "image" {
+            while let Some(chunk) = field.next().await {
+                image_bytes
+                    .extend_from_slice(&chunk.map_err(|e| AppError::BadRequest(e.to_string()))?);
+            }
+        } else {
+            let mut data = Vec::new();
+            while let Some(chunk) = field.next().await {
+                data.extend_from_slice(&chunk.map_err(|e| AppError::BadRequest(e.to_string()))?);
+            }
+            fields.insert(
+                field_name,
+                String::from_utf8(data).map_err(|e| AppError::BadRequest(e.to_string()))?,
+            );
+        }
+    }
+
+    let mut create_req = CreateRestaurantRequest {
+        name: fields.get("name").cloned().unwrap_or_default(),
+        description: fields.get("description").cloned(),
+        address: fields.get("address").cloned().unwrap_or_default(),
+        category: fields.get("category").cloned().unwrap_or_default(),
+        phone: fields.get("phone").cloned(),
+        image_url: None,
+        lat: fields.get("lat").and_then(|v| v.parse().ok()),
+        lng: fields.get("lng").and_then(|v| v.parse().ok()),
+    };
+
+    create_req
+        .validate()
+        .map_err(|e| AppError::BadRequest(e.to_string()))?;
+
+    if !image_bytes.is_empty() {
+        let image_url = upload_image(&config.cloudinary_url, image_bytes)
+            .await
+            .map_err(|e| AppError::InternalError(e.to_string()))?;
+        create_req.image_url = Some(image_url);
+    }
+
     let restaurant =
-        restaurant_service::create_restaurant(pool.get_ref(), owner_id, body.into_inner()).await?;
+        restaurant_service::create_restaurant(pool.get_ref(), owner_id, create_req).await?;
     Ok(HttpResponse::Created().json(serde_json::json!({
-        "restaurant":restaurant,
-        "message":"Restaurant created successfully"
+        "restaurant": restaurant,
+        "message": "Restaurant created successfully"
     })))
 }

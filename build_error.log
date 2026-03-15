@@ -1,0 +1,144 @@
+    Checking food-ordering-api v0.1.0 (/home/samuel/Desktop/food-ordering-api)
+warning: unused import: `cloudinary::*`
+ --> src/cloudinary.rs:3:5
+  |
+3 | use cloudinary::*;
+  |     ^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `UpdateRestaurantRequest` and `restaurant`
+ --> src/handlers/restaurant.rs:3:44
+  |
+3 |     handlers::{auth::user_id_from_request, restaurant},
+  |                                            ^^^^^^^^^^
+4 |     models::restaurant::{CreateRestaurantRequest, RestaurantFilter, UpdateRestaurantRequest},
+  |                                                                     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::cloudinary::upload_image`
+ --> src/handlers/restaurant.rs:9:5
+  |
+9 | use crate::cloudinary::upload_image;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `actix_multipart::Multipart`
+  --> src/handlers/restaurant.rs:10:5
+   |
+10 | use actix_multipart::Multipart;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `futures_util::StreamExt`
+  --> src/handlers/restaurant.rs:12:5
+   |
+12 | use futures_util::StreamExt;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Deserialize`
+ --> src/models/favorite.rs:3:13
+  |
+3 | use serde::{Deserialize, Serialize};
+  |             ^^^^^^^^^^^
+
+warning: unused import: `lettre::transport::smtp::commands::Auth`
+ --> src/routes/restaurants.rs:6:5
+  |
+6 | use lettre::transport::smtp::commands::Auth;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::handlers::restaurant`
+ --> src/services/restaurant_service.rs:2:5
+  |
+2 | use crate::handlers::restaurant;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `UpdateRestaurantRequest`
+ --> src/services/restaurant_service.rs:5:5
+  |
+5 |     UpdateRestaurantRequest,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0433]: failed to resolve: use of undeclared type `Cloudinary`
+ --> src/cloudinary.rs:7:9
+  |
+7 |         Cloudinary::new(cloudinary_url).map_err(|e| AppError::InternalError(e.to_string()))?;
+  |         ^^^^^^^^^^ use of undeclared type `Cloudinary`
+
+error[E0282]: type annotations needed
+ --> src/cloudinary.rs:7:50
+  |
+7 |         Cloudinary::new(cloudinary_url).map_err(|e| AppError::InternalError(e.to_string()))?;
+  |                                                  ^                          - type must be known at this point
+  |
+help: consider giving this closure parameter an explicit type
+  |
+7 |         Cloudinary::new(cloudinary_url).map_err(|e: /* Type */| AppError::InternalError(e.to_string()))?;
+  |                                                   ++++++++++++
+
+error[E0282]: type annotations needed
+  --> src/cloudinary.rs:8:18
+   |
+ 8 |       let result = cloudinary
+   |  __________________^
+ 9 | |         .upload(bytes, UploadOptions::default())
+10 | |         .await
+   | |______________^ cannot infer type
+
+error[E0282]: type annotations needed
+  --> src/cloudinary.rs:11:19
+   |
+11 |         .map_err(|e| AppError::InternalError(e.to_string()))?;
+   |                   ^                          - type must be known at this point
+   |
+help: consider giving this closure parameter an explicit type
+   |
+11 |         .map_err(|e: /* Type */| AppError::InternalError(e.to_string()))?;
+   |                    ++++++++++++
+
+warning: use of deprecated method `redis::Client::get_async_connection`: aio::Connection is deprecated. Use client::get_multiplexed_async_connection instead.
+   --> src/services/auth_service.rs:121:26
+    |
+121 |     let mut conn = redis.get_async_connection().await?;
+    |                          ^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(deprecated)]` on by default
+
+warning: use of deprecated method `redis::Client::get_async_connection`: aio::Connection is deprecated. Use client::get_multiplexed_async_connection instead.
+   --> src/services/auth_service.rs:148:26
+    |
+148 |     let mut conn = redis.get_async_connection().await?;
+    |                          ^^^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated method `redis::Client::get_async_connection`: aio::Connection is deprecated. Use client::get_multiplexed_async_connection instead.
+   --> src/services/auth_service.rs:161:26
+    |
+161 |     let mut conn = redis.get_async_connection().await?;
+    |                          ^^^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated method `redis::Client::get_async_connection`: aio::Connection is deprecated. Use client::get_multiplexed_async_connection instead.
+   --> src/services/auth_service.rs:180:26
+    |
+180 |     let mut conn = redis.get_async_connection().await?;
+    |                          ^^^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated method `redis::Client::get_async_connection`: aio::Connection is deprecated. Use client::get_multiplexed_async_connection instead.
+   --> src/services/auth_service.rs:191:26
+    |
+191 |     let mut conn = redis.get_async_connection().await?;
+    |                          ^^^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated method `redis::Client::get_async_connection`: aio::Connection is deprecated. Use client::get_multiplexed_async_connection instead.
+   --> src/services/auth_service.rs:215:26
+    |
+215 |     let mut conn = redis.get_async_connection().await?;
+    |                          ^^^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated method `redis::Client::get_async_connection`: aio::Connection is deprecated. Use client::get_multiplexed_async_connection instead.
+   --> src/services/auth_service.rs:229:26
+    |
+229 |     let mut conn = redis.get_async_connection().await?;
+    |                          ^^^^^^^^^^^^^^^^^^^^
+
+Some errors have detailed explanations: E0282, E0433.
+For more information about an error, try `rustc --explain E0282`.
+warning: `food-ordering-api` (bin "food-ordering-api") generated 16 warnings
+error: could not compile `food-ordering-api` (bin "food-ordering-api") due to 4 previous errors; 16 warnings emitted

@@ -15,6 +15,8 @@ pub enum AppError {
     Conflict(String),
     #[error("Internal server error")]
     InternalServerError,
+    #[error("Internal error: {0}")]
+    InternalError(String),
     #[error("Database error:{0}")]
     DatabaseError(#[from] sqlx::Error),
     #[error("Redis error:{0}")]
@@ -37,6 +39,7 @@ impl ResponseError for AppError {
             AppError::BadRequest(_) => (actix_web::http::StatusCode::BAD_REQUEST, "BAD_REQUEST"),
             AppError::Conflict(_) => (actix_web::http::StatusCode::CONFLICT, "CONFLICT"),
             AppError::InternalServerError
+            | AppError::InternalError(_)
             | AppError::DatabaseError(_)
             | AppError::RedisError(_) => (
                 actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,

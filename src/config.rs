@@ -18,10 +18,10 @@ pub struct Config {
     pub jwt_refresh_secret: String,
     pub jwt_refresh_expiry_days: i64,
 
-    // Stripe — https://stripe.com/docs/api
-    pub stripe_secret_key: String,
-    pub stripe_webhook_secret: String,
-
+    // // Stripe — https://stripe.com/docs/api
+    // pub stripe_secret_key: String,
+    // pub stripe_webhook_secret: String,
+    pub cloudinary_url: String,
     // Email (SMTP or SendGrid)
     pub smtp_host: String,
     pub smtp_port: u16,
@@ -45,14 +45,15 @@ impl Config {
             jwt_expiry_hours: env_num("JWT_EXPIRY_HOURS", 24),
             jwt_refresh_secret: env_required("JWT_REFRESH_SECRET"),
             jwt_refresh_expiry_days: env_num("JWT_REFRESH_EXPIRY_DAYS", 30),
-            stripe_secret_key: env_required("STRIPE_SECRET_KEY"),
-            stripe_webhook_secret: env_required("STRIPE_WEBHOOK_SECRET"),
+            // stripe_secret_key: env_required("STRIPE_SECRET_KEY"),
+            // stripe_webhook_secret: env_required("STRIPE_WEBHOOK_SECRET"),
             smtp_host: env_str("SMTP_HOST", "smtp.sendgrid.net"),
             smtp_port: env_num("SMTP_PORT", 587),
             smtp_user: env_required("SMTP_USER"),
             smtp_password: env_required("SMTP_PASSWORD"),
             frontend_url: env_str("FRONTEND_URL", "http://localhost:3000"),
             rate_limit_per_minute: env_num("RATE_LIMIT_PER_MINUTE", 100),
+            cloudinary_url: env_required("CLOUDINARY_URL"),
         }
     }
 }

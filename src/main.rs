@@ -3,6 +3,7 @@ use actix_web::{web, App, HttpServer, ResponseError};
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
+mod cloudinary;
 mod config;
 mod db;
 mod error;

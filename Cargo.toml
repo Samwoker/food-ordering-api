@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 actix-web        = "4"
 actix-rt         = "2"
+actix-multipart = "0.6"
 actix-ws         = "0.3"          # WebSocket support for real-time tracking
 actix-web-actors = "4"            # Actor-based WebSocket handlers
 tokio            = { version = "1", features = ["full"] }
@@ -23,6 +24,7 @@ dotenvy = "0.15"
 
 jsonwebtoken = "9"
 argon2       = "0.5"
+cloudinary = "0.4"
 
 uuid    = { version = "1", features = ["v4", "serde"] }
 chrono  = { version = "0.4", features = ["serde"] }

@@ -3,7 +3,6 @@ use crate::{
 };
 
 use actix_web::web;
-use lettre::transport::smtp::commands::Auth;
 
 pub fn configure_restaurant_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
