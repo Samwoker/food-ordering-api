@@ -18,3 +18,13 @@ pub async fn list_categories(
     .await?;
     Ok(categories)
 }
+
+pub async fn list_menu(pool: &PgPool, restaurant_id: Uuid) -> Result<Vec<MenuItem>, AppError> {
+    let menus = sqlx::query_as::<sqlx::Postgres, MenuItem>(
+        "SELECT * FROM menu_items WHERE restaurant_id = $1 ORDER BY sort_order ASC, name ASC",
+    )
+    .bind(restaurant_id)
+    .fetch_all(pool)
+    .await?;
+    Ok(menus)
+}

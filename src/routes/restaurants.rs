@@ -12,10 +12,8 @@ pub fn configure_restaurant_routes(cfg: &mut web::ServiceConfig) {
             web::scope("/restaurants")
                 .route("/", web::get().to(restaurant::list_restaurants))
                 .route("/{id}", web::get().to(restaurant::get_restaurant))
-                .route(
-                    "/{restaurant_id}/menu/categories",
-                    web::get().to(menu::list_categories),
-                )
+                .route("/{id}/categories", web::get().to(menu::list_categories))
+                .route("/{id}/menu", web::get().to(menu::list_menu))
                 .service(
                     web::scope("")
                         .wrap(AuthMiddleware)
