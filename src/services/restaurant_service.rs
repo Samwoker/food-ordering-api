@@ -1,5 +1,6 @@
 use crate::error::AppError;
 use crate::handlers::restaurant;
+use crate::models::menu_item::MenuCategory;
 use crate::models::restaurant::{
     CreateRestaurantRequest, Restaurant, RestaurantFilter, RestaurantSummary,
     UpdateRestaurantRequest,

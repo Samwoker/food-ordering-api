@@ -54,3 +54,16 @@ pub async fn create_category(
         "category":category
     })))
 }
+
+pub async fn delete_category(
+    req: HttpRequest,
+    pool: web::Data<sqlx::PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, AppError> {
+    let owner_id = user_id_from_request(&req)?;
+    let category_id = path.into_inner();
+    menu_service::delete_category(pool.get_ref(), category_id, owner_id).await?;
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message":"Category deleted successfully",
+    })))
+}

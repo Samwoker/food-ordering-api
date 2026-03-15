@@ -75,6 +75,36 @@ pub async fn create_category(
     Ok(category)
 }
 
+pub async fn delete_category(
+    pool: &PgPool,
+    category_id: Uuid,
+    owner_id: Uuid,
+) -> Result<(), AppError> {
+    let category = sqlx::query_as::<sqlx::Postgres, MenuCategory>(
+        "SELECT restaurant_id FROM menu_categories WHERE id = $1 AND owner_id = $2",
+    )
+    .bind(category_id)
+    .bind(owner_id)
+    .fetch_optional(pool)
+    .await?
+    .ok_or_else(|| AppError::NotFound(format!("Category {} not found", category_id)))?;
+
+    verify_restaurant_owner(pool, category.restaurant_id, owner_id).await?;
+
+    let mut tx = pool.begin().await?;
+    sqlx::query("UPDATE menu_items SET category_id = $1 WHERE category_id = $2")
+        .bind(category_id)
+        .execute(&mut *tx)
+        .await?;
+
+    sqlx::query("DELETE FROM menu_categories WHERE id = $1")
+        .bind(category_id)
+        .execute(&mut *tx)
+        .await?;
+    tx.commit().await?;
+    Ok(())
+}
+
 async fn verify_restaurant_owner(
     pool: &PgPool,
     restaurant_id: Uuid,
