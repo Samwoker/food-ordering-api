@@ -1,5 +1,5 @@
 use crate::{
-    handlers::{menu, restaurant},
+    handlers::{menu, restaurant, review},
     middlewares::auth::AuthMiddleware,
     middlewares::role_guard::RoleGuard,
 };
@@ -15,6 +15,7 @@ pub fn configure_restaurant_routes(cfg: &mut web::ServiceConfig) {
                 .route("/{id}/categories", web::get().to(menu::list_categories))
                 .route("/{id}/menu", web::get().to(menu::list_menu))
                 .route("/{id}/menu/{menu_id}", web::get().to(menu::get_menu_item))
+                .route("/{id}/reviews", web::get().to(review::list_reviews))
                 .service(
                     web::scope("")
                         .wrap(AuthMiddleware)
