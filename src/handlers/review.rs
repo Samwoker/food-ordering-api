@@ -53,3 +53,36 @@ pub async fn create_review(
         "review":review
     })))
 }
+
+pub async fn update_review(
+    req: HttpRequest,
+    pool: web::Data<sqlx::PgPool>,
+    path: web::Data<Uuid>,
+    body: web::Json<UpdateReviewRequest>,
+) -> Result<HttpResponse, AppError> {
+    body.validate()
+        .map_err(|e| AppError::BadRequest(e.to_string()))?;
+    let user_id = user_id_from_request(&req)?;
+    let review_id = path.into_inner();
+
+    let updated_review =
+        review_service::update_review(pool.get_ref(), user_id, *review_id, body.into_inner())
+            .await?;
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message":"Review updated successfully",
+        "review":updated_review
+    })))
+}
+
+pub async fn delete_review(
+    req: HttpRequest,
+    pool: web::Data<sqlx::PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, AppError> {
+    let user_id = user_id_from_request(&req)?;
+    let review_id = path.into_inner();
+    review_service::delete_review(pool.get_ref(), user_id, review_id).await?;
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message":"Review deleted successfully"
+    })))
+}

@@ -41,7 +41,15 @@ pub fn configure_restaurant_routes(cfg: &mut web::ServiceConfig) {
                             web::delete().to(menu::delete_menu_item),
                         )
                         .route("/{id}/menu/owner", web::get().to(menu::list_menu_for_owner))
-                        .route("/{id}/reviews", web::post().to(review::create_review)),
+                        .route("/{id}/reviews", web::post().to(review::create_review))
+                        .route(
+                            "/{id}/reviews/{review_id}",
+                            web::put().to(review::update_review),
+                        )
+                        .route(
+                            "/{id}/reviews/{review_id}",
+                            web::delete().to(review::delete_review),
+                        ),
                 ),
         ),
     );

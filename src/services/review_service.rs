@@ -6,6 +6,7 @@ use crate::models::review::{
 };
 
 use crate::paginations::Pagination;
+use actix_web::App;
 use redis::streams::StreamMaxlen;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -138,4 +139,57 @@ pub async fn create_review(
     .map_err(|e| AppError::Conflict("You have already reviewed this restaurant".to_string()))?;
 
     Ok(review)
+}
+
+pub async fn update_review(
+    pool: &PgPool,
+    user_id: Uuid,
+    review_id: Uuid,
+    body: UpdateReviewRequest,
+) -> Result<Review, AppError> {
+    let review = sqlx::query_as::<sqlx::Postgres, Review>("SELECT * FROM reviews WHERE id = $1")
+        .bind(review_id)
+        .fetch_optional(pool)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Review not found".to_string()))?;
+
+    if review.user_id != user_id {
+        return Err(AppError::Forbidden(
+            "You can only edit your own review".to_string(),
+        ));
+    }
+
+    let updated = sqlx::query_as::<sqlx::Postgres,Review>(
+        "UPDATE reviews SET rating = COALESCE($1,rating), comment = COALESCE($2,comment) , updated_at = NOW() WHERE id = $3 
+        RETURNING *
+        "
+    )
+    .bind(body.rating)
+    .bind(body.comment)
+    .bind(review_id)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(updated)
+}
+
+pub async fn delete_review(pool: &PgPool, user_id: Uuid, review_id: Uuid) -> Result<(), AppError> {
+    let review = sqlx::query_as::<sqlx::Postgres, Review>("SELECT * FROM reviews WHERE id = $1")
+        .bind(review_id)
+        .fetch_optional(pool)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Review not found".to_string()))?;
+
+    if review.user_id != user_id {
+        return Err(AppError::Forbidden(
+            "You can only delete your own review".to_string(),
+        ));
+    }
+
+    sqlx::query("DELETE FROM reviews WHERE id = $1")
+        .bind(review_id)
+        .execute(pool)
+        .await?;
+
+    Ok(())
 }
