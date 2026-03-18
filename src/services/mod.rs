@@ -3,3 +3,4 @@ pub mod email_service;
 pub mod menu_service;
 pub mod restaurant_service;
 pub mod review_service;
+pub mod user_service;
