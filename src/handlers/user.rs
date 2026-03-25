@@ -1,7 +1,10 @@
 use crate::{
     config::{self, Config},
     error::AppError,
-    handlers::auth::{self, user_id_from_request},
+    handlers::{
+        auth::{self, user_id_from_request},
+        user,
+    },
     models::{
         address::{CreateAddressRequest, UpdateAddressRequest},
         user::{UpdateProfileRequest, UserResponse},
@@ -87,5 +90,38 @@ pub async fn delete_me(
     tracing::warn!(user_id = %user_id, "Account deleted by user request");
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "message": "Your account has been deleted. We're sorry to see you go."
+    })))
+}
+
+#[derive(Deserialize, Validate)]
+
+pub struct ChangePasswordRequest {
+    pub current_password: String,
+
+    #[validate(length(min = 8, message = "New password must be at least 8 characters"))]
+    pub new_password: String,
+    pub confirm_password: String,
+}
+
+pub async fn change_password(
+    req: HttpRequest,
+    pool: web::Data<sqlx::PgPool>,
+    body: web::Json<ChangePasswordRequest>,
+) -> Result<HttpResponse, AppError> {
+    body.validate()
+        .map_err(|e| AppError::BadRequest(e.to_string()));
+    let user_id = user_id_from_request(&req)?;
+    if &body.new_password != &body.confirm_password {
+        return Err(AppError::BadRequest("Password does not much".to_string()));
+    }
+    user_service::change_password(
+        pool.get_ref(),
+        user_id,
+        &body.current_password,
+        &body.new_password,
+    )
+    .await?;
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message":"Password changed successfully"
     })))
 }

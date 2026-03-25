@@ -84,3 +84,35 @@ pub async fn delete_account(pool: &PgPool, user_id: Uuid) -> Result<(), AppError
     tracing::info!(user_id = %user_id, "Account soft-deleted");
     Ok(())
 }
+
+pub async fn change_password(
+    pool: &PgPool,
+    user_id: Uuid,
+    current_password: &str,
+    new_password: &str,
+) -> Result<(), AppError> {
+    let row = sqlx::query_as::<sqlx::Postgres, User>("SELECT password FROM users WHERE id = $1")
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await?
+        .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
+
+    let valid = crate::services::auth_service::verify_password(current_password, &row.password)?;
+    if !valid {
+        return Err(AppError::Unauthorized(
+            "Current password is incorrect".to_string(),
+        ));
+    }
+    let new_hash = hash_password(new_password)?;
+
+    sqlx::query_as::<sqlx::Postgres, User>(
+        "UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2",
+    )
+    .bind(new_hash)
+    .bind(user_id)
+    .fetch_optional(pool)
+    .await?;
+
+    tracing::info!(user_id = %user_id, "Password changed");
+    Ok(())
+}

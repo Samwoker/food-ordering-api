@@ -1,5 +1,5 @@
 use crate::{
-    handlers::user::{self, delete_me, update_me},
+    handlers::user::{self, change_password, delete_me, update_me},
     middlewares::auth::AuthMiddleware,
 };
 
@@ -12,7 +12,8 @@ pub fn configure_user_routes(cfg: &mut web::ServiceConfig) {
                 .wrap(AuthMiddleware)
                 .route("/me", web::get().to(user::get_me))
                 .route("/me", web::put().to(update_me))
-                .route("/me", web::delete().to(delete_me)),
+                .route("/me", web::delete().to(delete_me))
+                .route("/me/change-password", web::post().to(change_password)),
         ),
     );
 }
