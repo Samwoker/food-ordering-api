@@ -64,3 +64,28 @@ pub async fn update_me(
         }
     })))
 }
+
+#[derive(Deserialize)]
+
+pub struct DeleteAccountRequest {
+    pub confirm: String,
+}
+
+pub async fn delete_me(
+    req: HttpRequest,
+    pool: web::Data<sqlx::PgPool>,
+    body: web::Json<DeleteAccountRequest>,
+) -> Result<HttpResponse, AppError> {
+    if body.confirm != "DELETE" {
+        return Err(AppError::BadRequest(
+            r#"Send {"confirm":"DELETE"} to confirm account deletion"#.to_string(),
+        ));
+    }
+
+    let user_id = user_id_from_request(&req)?;
+    user_service::delete_account(pool.get_ref(), user_id).await?;
+    tracing::warn!(user_id = %user_id, "Account deleted by user request");
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message": "Your account has been deleted. We're sorry to see you go."
+    })))
+}

@@ -1,9 +1,11 @@
 use crate::error::AppError;
+use crate::handlers::user;
 use crate::models::address::{Address, CreateAddressRequest, UpdateAddressRequest};
 use crate::models::user::{UpdateProfileRequest, User, UserResponse};
 use crate::services::auth_service::hash_password;
 use actix_web::Result;
-use sqlx::PgPool;
+use sqlx::{PgPool, Postgres};
+use tracing_subscriber::fmt::format;
 use uuid::Uuid;
 
 pub async fn get_profile(pool: &PgPool, user_id: Uuid) -> Result<User, AppError> {
@@ -20,13 +22,12 @@ pub async fn update_profile(
     body: UpdateProfileRequest,
 ) -> Result<User, AppError> {
     if let Some(ref new_email) = body.email {
-        let taken: bool = sqlx::query_scalar(
-            "SELECT EXISTS(SELECT 1 FROM users WHERE email = $1 AND id != $2)",
-        )
-        .bind(new_email.to_lowercase())
-        .bind(user_id)
-        .fetch_one(pool)
-        .await?;
+        let taken: bool =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1 AND id != $2)")
+                .bind(new_email.to_lowercase())
+                .bind(user_id)
+                .fetch_one(pool)
+                .await?;
 
         if taken {
             return Err(AppError::Conflict(
@@ -60,4 +61,26 @@ pub async fn update_profile(
     tracing::info!(user_id = %user_id, "Profile updated");
 
     Ok(updated)
+}
+
+pub async fn delete_account(pool: &PgPool, user_id: Uuid) -> Result<(), AppError> {
+    let anon_email = format!("deleted_{}@removed.invalid", user_id);
+    sqlx::query_as::<sqlx::Postgres, User>(
+        r#"
+        UPDATE users SET
+            email      = $1,
+            full_name  = 'Deleted User'
+            password_hash = 'DELETED'
+            is_blocked = true,
+            is_verified = false,
+            updated_at = NOW()
+        WHERE id = $2
+        "#,
+    )
+    .bind(anon_email)
+    .bind(user_id)
+    .fetch_optional(pool)
+    .await?;
+    tracing::info!(user_id = %user_id, "Account soft-deleted");
+    Ok(())
 }
