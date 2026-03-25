@@ -1,9 +1,11 @@
 use crate::{
-    config::Config,
+    config::{self, Config},
     error::AppError,
-    handlers::auth::user_id_from_request,
-    models::address::{CreateAddressRequest, UpdateAddressRequest},
-    models::user::{UpdateProfileRequest, UserResponse},
+    handlers::auth::{self, user_id_from_request},
+    models::{
+        address::{CreateAddressRequest, UpdateAddressRequest},
+        user::{UpdateProfileRequest, UserResponse},
+    },
     paginations::Pagination,
     services::{auth_service, email_service, user_service},
 };
@@ -31,5 +33,34 @@ pub async fn get_me(
     Ok(HttpResponse::Ok().json(serde_json::json!({
       "user":UserResponse::from(user),
       "unread_notification":unread_notifications
+    })))
+}
+
+pub async fn update_me(
+    req: HttpRequest,
+    pool: web::Data<sqlx::PgPool>,
+    redis: web::Data<redis::Client>,
+    config: web::Data<Config>,
+    body: web::Json<UpdateProfileRequest>,
+) -> Result<HttpResponse, AppError> {
+    body.validate()
+        .map_err(|e| AppError::BadRequest(e.to_string()))?;
+    let user_id = user_id_from_request(&req)?;
+    let email_changed = body.email.is_some();
+    let user = user_service::update_profile(pool.get_ref(), user_id, body.into_inner()).await?;
+
+    if email_changed {
+        let token = auth_service::generate_email_token(user_id, &redis).await?;
+        let _ =
+            email_service::send_verification_email(&user.email, &user.full_name, &token, &config)
+                .await;
+    }
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "user":    UserResponse::from(user),
+        "message": if email_changed {
+            "Profile updated. Please check your new email to re-verify."
+        } else {
+            "Profile updated."
+        }
     })))
 }
